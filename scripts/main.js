@@ -2,8 +2,6 @@ import * as THREE from 'three';
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { World } from "./world.js";
 
-
-
 //renderer
 const renderer = new THREE.WebGLRenderer();
 renderer.setPixelRatio(window.devicePixelRatio);
@@ -15,21 +13,20 @@ document.body.appendChild(renderer.domElement);
 
 //camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight);
-camera.position.set(-32, 16, -32);
+camera.position.set(100, 200, 230);
 camera.lookAt(0, 0, 0);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(16,0, 16);
+controls.target.set(0, 0, 0);
 controls.update();
 
 
 
 //scene
 const scene = new THREE.Scene();
-const world = new World();
+const world = new World(12345, 300, 100);
 world.generate(camera);
 scene.add(world);
-
 
 function setUpLights(){
     const light1 = new THREE.DirectionalLight();
