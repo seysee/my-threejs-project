@@ -44,10 +44,13 @@ export class World extends THREE.Group {
             if (random(seed++) > 0.5) {
                 const billboardWidth = width * 0.6;
                 const billboardHeight = height * 0.3;
-                const billboardPosition = position.clone().add(new THREE.Vector3(0, height / 2, depth / 2 + 0.1));
+                const isFront = Math.random() > 0.5;
+                const billboardPosition = isFront
+                    ? position.clone().add(new THREE.Vector3(0, height / 2, depth / 2 + 0.1))
+                    : position.clone().add(new THREE.Vector3(0, height / 2, -depth / 2 - 0.1));
                 if (Math.abs(billboardPosition.x) <= halfSize && Math.abs(billboardPosition.z) <= halfSize) {
                     const facadeBillboard = new Billboard(billboardWidth, billboardHeight, billboardPosition, this.randomTexture(seed));
-                    facadeBillboard.mesh.rotation.y = Math.PI;
+                    facadeBillboard.mesh.rotation.y = isFront ? 0 : Math.PI;
                     this.add(facadeBillboard.mesh);
                     this.fixedElements.push({ type: "billboard", mesh: facadeBillboard.mesh });
                 }
@@ -55,8 +58,11 @@ export class World extends THREE.Group {
 
             if (random(seed++) > 0.6) {
                 const screenPosition = position.clone().add(new THREE.Vector3(0, 30, -5));
+                const isFront = Math.random() > 0.5;
+
                 if (Math.abs(screenPosition.x) <= halfSize && Math.abs(screenPosition.z) <= halfSize) {
                     const screen = new GiantScreen(20, 15, screenPosition, this.randomTexture(seed));
+                    screen.mesh.rotation.y = isFront ? 0 : Math.PI;
                     this.add(screen.mesh);
                     this.fixedElements.push({ type: "giantScreen", mesh: screen.mesh });
                 }
