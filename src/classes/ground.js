@@ -1,12 +1,10 @@
 import * as THREE from "three";
 
 export class Ground {
-    constructor(size) {
-        const geometry = new THREE.PlaneGeometry(size, size);
-        const material = new THREE.MeshStandardMaterial({ color: "#b0aa9d", side: THREE.DoubleSide });
+    constructor(size, thickness = 2) {
+        const geometry = new THREE.BoxGeometry(size, thickness, size);
+        const material = new THREE.MeshStandardMaterial({ color: "#222222" });
         this.mesh = new THREE.Mesh(geometry, material);
-        this.mesh.rotation.x = -Math.PI / 2;
-        this.mesh.position.y = -2;
-        this.size = size;
+        this.mesh.position.y = -thickness / 2;
     }
 }

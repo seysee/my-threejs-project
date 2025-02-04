@@ -1,77 +1,46 @@
 import * as THREE from "three";
-import { Ground } from "./Ground.js";
-import { Building } from "./Building.js";
-import { Billboard } from "./Billboard.js";
-import { GiantScreen } from "./GiantScreen.js";
-
-function random(seed) {
-    const x = Math.sin(seed++) * 10000;
-    return x - Math.floor(x);
-}
+import { Grid } from "./grid.js";
+import { Building } from "./building.js";
+import { Ground } from "./ground.js";
+import { Skyscraper } from "./skyscraper.js";
 
 export class World extends THREE.Group {
-    constructor(seed = 42, size = 300, numBuildings = 50) {
+    constructor(seed) {
         super();
         this.seed = seed;
-        this.size = size;
-        this.numBuildings = numBuildings;
-        this.textures = ["./assets/textures/ads_01.jpg", "./assets/textures/ads_02.jpg", "./assets/textures/ads_03.jpg"];
-        this.fixedElements = [];
+        this.grid = new Grid(4, 4, 20);
+        const ground = new Ground(this.grid.rows * this.grid.cellSize);
+        this.add(ground.mesh);
+        this.generate();
+        this.add(this.grid.group);
     }
 
     generate() {
-        const ground = new Ground(this.size);
-        this.add(ground.mesh);
+        const layout = [
+            ["skyscraper", "building", "building", "skyscraper"],
+            ["building", "empty", "empty", "building"],
+            ["building", "empty", "empty", "building"],
+            ["skyscraper", "building", "building", "skyscraper"]
+        ];
 
-        let seed = this.seed;
-        const halfSize = this.size / 2 - 10;
+        for (let row = 0; row < this.grid.rows; row++) {
+            for (let col = 0; col < this.grid.columns; col++) {
+                const position = new THREE.Vector3(
+                    (col - (this.grid.columns - 1) / 2) * this.grid.cellSize,
+                    0,
+                    (row - (this.grid.rows - 1) / 2) * this.grid.cellSize
+                );
 
-        for (let i = 0; i < this.numBuildings; i++) {
-            const position = new THREE.Vector3(
-                Math.max(Math.min(random(seed++) * (this.size - 20) - this.size / 2, halfSize), -halfSize),
-                0,
-                Math.max(Math.min(random(seed++) * (this.size - 20) - this.size / 2, halfSize), -halfSize)
-            );
+                const type = layout[row][col];
 
-            const width = random(seed++) * 4 + 10;
-            const height = random(seed++) * 40 + 20;
-            const depth = random(seed++) * 4 + 10;
-
-            const building = new Building(width, height, depth, position);
-            building.mesh.position.y = building.mesh.geometry.parameters.height / 2;
-            this.add(building.mesh);
-
-            if (random(seed++) > 0.5) {
-                const billboardWidth = width * 0.6;
-                const billboardHeight = height * 0.3;
-                const isFront = Math.random() > 0.5;
-                const billboardPosition = isFront
-                    ? position.clone().add(new THREE.Vector3(0, height / 2, depth / 2 + 0.1))
-                    : position.clone().add(new THREE.Vector3(0, height / 2, -depth / 2 - 0.1));
-                if (Math.abs(billboardPosition.x) <= halfSize && Math.abs(billboardPosition.z) <= halfSize) {
-                    const facadeBillboard = new Billboard(billboardWidth, billboardHeight, billboardPosition, this.randomTexture(seed));
-                    facadeBillboard.mesh.rotation.y = isFront ? 0 : Math.PI;
-                    this.add(facadeBillboard.mesh);
-                    this.fixedElements.push({ type: "billboard", mesh: facadeBillboard.mesh });
-                }
-            }
-
-            if (random(seed++) > 0.6) {
-                const screenPosition = position.clone().add(new THREE.Vector3(0, 30, -5));
-                const isFront = Math.random() > 0.5;
-
-                if (Math.abs(screenPosition.x) <= halfSize && Math.abs(screenPosition.z) <= halfSize) {
-                    const screen = new GiantScreen(20, 15, screenPosition, this.randomTexture(seed));
-                    screen.mesh.rotation.y = isFront ? 0 : Math.PI;
-                    this.add(screen.mesh);
-                    this.fixedElements.push({ type: "giantScreen", mesh: screen.mesh });
+                if (type === "building") {
+                    const building = new Building(10, 20, 10, position);
+                    this.grid.placeInCell(row, col, building);
+                } else if (type === "skyscraper") {
+                    const skyscraper = new Skyscraper(10, 50, 10, position);
+                    this.grid.placeInCell(row, col, skyscraper);
                 }
             }
         }
-    }
-
-    randomTexture(seed) {
-        const index = Math.floor(random(seed) * this.textures.length);
-        return this.textures[index];
     }
 }

@@ -16,4 +16,3 @@ export class GiantScreen {
         this.mesh.add(frame);
     }
 }
-
