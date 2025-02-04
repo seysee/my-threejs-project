@@ -17,7 +17,7 @@ export class World extends THREE.Group {
 
     generate() {
         const layout = [
-            ["skyscraper", "building", "building", "skyscraper"],
+            ["skyscraper", "empty", "building", "skyscraper"],
             ["building", "empty", "empty", "building"],
             ["building", "empty", "empty", "building"],
             ["skyscraper", "building", "building", "skyscraper"]
