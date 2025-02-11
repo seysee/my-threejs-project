@@ -11,19 +11,23 @@ export class Grid {
 
     placeInCell(row, column, element) {
         if (this.isValidCell(row, column)) {
-            const x = (column - (this.columns - 1) / 2) * this.cellSize;
-            const z = (row - (this.rows - 1) / 2) * this.cellSize;
+            if (element.mesh) {
+                const x = (column - (this.columns - 1) / 2) * this.cellSize;
+                const z = (row - (this.rows - 1) / 2) * this.cellSize;
 
-            element.mesh.position.set(x, element.mesh.position.y, z);
+                element.mesh.position.set(x, element.mesh.position.y, z);
 
-            if (this.grid[row][column]) {
-                this.group.remove(this.grid[row][column].mesh);
+                if (this.grid[row][column]) {
+                    this.group.remove(this.grid[row][column].mesh);
+                }
+
+                this.grid[row][column] = element;
+                this.group.add(element.mesh);
+            } else {
+                console.error("Le modèle n'a pas encore été chargé.", { row, column });
             }
-
-            this.grid[row][column] = element;
-            this.group.add(element.mesh);
         } else {
-            console.error("position hors de la grille", { row, column });
+            console.error("Position hors de la grille", { row, column });
         }
     }
 
