@@ -49,11 +49,11 @@ export class World extends THREE.Group {
                     const skyscraper = new Skyscraper(10, 50, 10, position);
                     this.grid.placeInCell(row, col, skyscraper);
                 } else if (type === "customBuilding") {
-                    const customBuilding = new BuildingModel('./assets/models/sky_t_021_gltf/scene.gltf', position);
+                    const customBuilding = new BuildingModel('./assets/models/sky_t_021_gltf/scene2.glb', position);
                     await customBuilding.loadModel();
                     this.grid.placeInCell(row, col, customBuilding);
                 } else if (type === "scifiEntrance") {
-                    const scifiEntrance = new BuildingEntrance('./assets/models/scifi_building_entrance_gltf/scene.gltf', position);
+                    const scifiEntrance = new BuildingEntrance('./assets/models/scifi_building_entrance_gltf/scene2.glb', position);
                     await scifiEntrance.loadModel();
                     this.grid.placeInCell(row, col, scifiEntrance);
                 }
