@@ -1,18 +1,21 @@
 import * as THREE from "three";
-import {Grid} from "./grid.js";
-import {Building} from "./building.js";
-import {Ground} from "./ground.js";
-import {Skyscraper} from "./skyscraper.js";
-import {BuildingModel} from "./BuildingModel.js";
-import {BuildingEntrance} from "./BuildingEntrance.js";
+import { Grid } from "./grid.js";
+import { Ground } from "./ground.js";
+import { Building } from "./building.js";
+import { Skyscraper } from "./skyscraper.js";
+import { BuildingModel } from "./BuildingModel.js";
+import { BuildingEntrance } from "./BuildingEntrance.js";
 
 export class World extends THREE.Group {
-    constructor(seed) {
+    constructor(seed, camera) {
         super();
         this.seed = seed;
+        this.camera = camera;
         this.grid = new Grid(5, 5, 20);
         const ground = new Ground(this.grid.rows * this.grid.cellSize);
         this.add(ground.mesh);
+
+        this.modelCache = new Map();
 
         this.generate().then(() => {
             console.log("La génération du monde est terminée.");
@@ -45,19 +48,32 @@ export class World extends THREE.Group {
                 if (type === "building") {
                     const building = new Building(10, 20, 10, position);
                     this.grid.placeInCell(row, col, building);
+                    this.add(building);
                 } else if (type === "skyscraper") {
                     const skyscraper = new Skyscraper(10, 50, 10, position);
                     this.grid.placeInCell(row, col, skyscraper);
+                    this.add(skyscraper);
                 } else if (type === "customBuilding") {
-                    const customBuilding = new BuildingModel('./assets/models/sky_t_021_gltf/scene2.glb', position);
-                    await customBuilding.loadModel();
-                    this.grid.placeInCell(row, col, customBuilding);
+                    await this.loadCachedModel(BuildingModel, './assets/models/sky_t_021_gltf/scene.gltf', position);
                 } else if (type === "scifiEntrance") {
-                    const scifiEntrance = new BuildingEntrance('./assets/models/scifi_building_entrance_gltf/scene2.glb', position);
-                    await scifiEntrance.loadModel();
-                    this.grid.placeInCell(row, col, scifiEntrance);
+                    await this.loadCachedModel(BuildingEntrance, './assets/models/scifi_building_entrance_gltf/scene.gltf', position);
                 }
             }
         }
+    }
+
+    async loadCachedModel(ModelClass, url, position) {
+        if (this.modelCache.has(url)) {
+            const model = this.modelCache.get(url).clone();
+            model.position.copy(position);
+            this.add(model);
+            return;
+        }
+
+        const modelInstance = new ModelClass(url, position);
+        await modelInstance.loadModel().then(() => {
+            this.modelCache.set(url, modelInstance.mesh.clone());
+            this.add(modelInstance.mesh);
+        });
     }
 }
