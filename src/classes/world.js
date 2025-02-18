@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { Grid } from "./grid.js";
+import { Road } from "./road.js";
 import { Ground } from "./ground.js";
 import { Building } from "./building.js";
 import { Skyscraper } from "./skyscraper.js";
@@ -14,6 +15,9 @@ export class World extends THREE.Group {
         this.grid = new Grid(5, 5, 20);
         const ground = new Ground(this.grid.rows * this.grid.cellSize);
         this.add(ground.mesh);
+        this.renderer = new THREE.WebGLRenderer();
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(this.renderer.domElement);
 
         this.modelCache = new Map();
 
@@ -28,7 +32,7 @@ export class World extends THREE.Group {
 
     async generate() {
         const layout = [
-            ["empty", "empty", "empty", "empty", "empty"],
+            ["empty", "road", "road", "road", "empty"],
             ["empty", "customBuilding", "skyscraper", "customBuilding", "empty"],
             ["empty", "building", "building", "skyscraper", "empty"],
             ["empty", "customBuilding", "scifiEntrance", "customBuilding", "empty"],
@@ -48,15 +52,20 @@ export class World extends THREE.Group {
                 if (type === "building") {
                     const building = new Building(10, 20, 10, position);
                     this.grid.placeInCell(row, col, building);
-                    this.add(building);
+                    this.add(building.mesh);
                 } else if (type === "skyscraper") {
-                    const skyscraper = new Skyscraper(10, 50, 10, position);
+                    const skyscraper = new Skyscraper(10, 50, 10, position, this.scene, this.camera, this.renderer);
                     this.grid.placeInCell(row, col, skyscraper);
-                    this.add(skyscraper);
+                    this.add(skyscraper.mesh);
                 } else if (type === "customBuilding") {
                     await this.loadCachedModel(BuildingModel, './assets/models/sky_t_021_gltf/scene.gltf', position);
                 } else if (type === "scifiEntrance") {
                     await this.loadCachedModel(BuildingEntrance, './assets/models/scifi_building_entrance_gltf/scene.gltf', position);
+                }
+                else if (type === "road") {
+                    const road = new Road(this.grid.cellSize, position);
+                    this.grid.placeInCell(row, col, road);
+                    this.add(road.mesh);
                 }
             }
         }

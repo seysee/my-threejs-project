@@ -1,7 +1,15 @@
 import * as THREE from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 
 export class Skyscraper {
-    constructor(width, height, depth, position) {
+    constructor(width, height, depth, position, scene, camera, renderer) {
+        if (!renderer) {
+            throw new Error("Renderer is required for bloom effect");
+        }
+
+        this.renderer = renderer;
         const heightReductionFactor = 0.7;
         this.height = height * heightReductionFactor;
         this.mesh = new THREE.Group();
@@ -10,6 +18,8 @@ export class Skyscraper {
         this.addSection(width, this.height * 0.6, depth, 0, "#1e1e1e", "patterned");
         this.addSection(width * 0.6, this.height * 0.4, depth * 0.6, this.height * 0.6, "#1a1a1a", true);
         this.addRoof(width, depth);
+
+        this.initBloom(scene, camera);
     }
 
     addSection(width, height, depth, yOffset, color, windowMode) {
@@ -108,12 +118,34 @@ export class Skyscraper {
         const roofDepth = depth * 0.4;
         const geometry = new THREE.BoxGeometry(roofWidth, 1.5, roofDepth);
         const material = new THREE.MeshStandardMaterial({
-            color: "rgba(67,66,66,0.5)",
+            color: new THREE.Color(0x434242),
+            transparent: true,
+            opacity: 0.5,
             roughness: 0.5,
             metalness: 0.9,
         });
         const roof = new THREE.Mesh(geometry, material);
         roof.position.y = this.height + 0.1;
         this.mesh.add(roof);
+    }
+
+    initBloom(scene, camera) {
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0;
+        bloomPass.strength = 1.5;
+        bloomPass.radius = 0.5;
+
+        this.composer = new EffectComposer(this.renderer);
+        this.composer.setPixelRatio(this.renderer.getPixelRatio());
+        this.composer.setSize(window.innerWidth, window.innerHeight);
+        this.composer.addPass(renderScene);
+        this.composer.addPass(bloomPass);
+    }
+
+    render() {
+        if (this.composer) {
+            this.composer.render();
+        }
     }
 }
