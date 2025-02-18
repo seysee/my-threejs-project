@@ -37,7 +37,7 @@ export class Building {
         const windowWidth = (width - 2 * marginX) / numCols * 0.9;
         const windowHeight = (height - 2 * marginY) / numRows * 0.9;
         const windowDepth = 0.05;
-        const neonColors = ["#2a7fff", "#c71585", "#1faa7f"];
+        const neonColors = ["#2a7fff", "#c71585"];
         const offColor = "#010b1b";
 
         let currentSeed = this.seed;

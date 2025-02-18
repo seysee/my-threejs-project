@@ -30,7 +30,7 @@ export class Skyscraper {
     }
 
     addWindows(section, width, height, depth, mode) {
-        const windowWidth = 0.3;
+        const windowWidth = 0.1; //épaisseur des lignes
         const windowHeight = height * 0.9;
         const spacing = 0.3;
         const positions = [
@@ -96,8 +96,8 @@ export class Skyscraper {
 
     getVerticalGradientColor(index, total, maxHeight) {
         const ratio = index / total;
-        const startColor = new THREE.Color("#2a7fff");
-        const endColor = new THREE.Color("#c71585");
+        const startColor = new THREE.Color("#25FDE9");
+        const endColor = new THREE.Color("#25FDE9");
         const lerpHeight = ratio * maxHeight;
 
         return startColor.lerp(endColor, lerpHeight / maxHeight);
