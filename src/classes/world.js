@@ -18,6 +18,7 @@ export class World extends THREE.Group {
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(this.renderer.domElement);
+        this.cloudTexture = new THREE.TextureLoader().load("./assets/textures/cloud.png");
 
         this.modelCache = new Map();
 
@@ -26,6 +27,8 @@ export class World extends THREE.Group {
         }).catch((error) => {
             console.error("Erreur lors de la génération du monde :", error);
         });
+
+        this.createClouds();
 
         this.add(this.grid.group);
     }
@@ -85,4 +88,39 @@ export class World extends THREE.Group {
             this.add(modelInstance.mesh);
         });
     }
+
+    createClouds() {
+        const cloudGroup = new THREE.Group();
+        const numClouds = 20;
+        const radius1 = this.grid.rows * this.grid.cellSize * 0.7;
+        const radius2 = this.grid.rows * this.grid.cellSize * 0.65; /* rayon */
+
+        const spriteMaterial = new THREE.SpriteMaterial({
+            map: this.cloudTexture,
+            transparent: true,
+            opacity: 0.5,
+            color: new THREE.Color(0xffaacc)
+        });
+
+        for (let j = 0; j < 2; j++) {
+            const radius = j === 0 ? radius1 : radius2;
+            const heightOffset = j === 0 ? 15 : 2; // hauteur de chaque rangée
+
+            for (let i = 0; i < numClouds; i++) {
+                const cloud = new THREE.Sprite(spriteMaterial);
+                const angle = (i / numClouds) * Math.PI * 2;
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                const y = Math.random() * 3 + heightOffset;
+
+                cloud.position.set(x, y, z);
+                cloud.scale.set(50, 35, 1);
+
+                cloudGroup.add(cloud);
+            }
+        }
+
+        this.add(cloudGroup);
+    }
+
 }
