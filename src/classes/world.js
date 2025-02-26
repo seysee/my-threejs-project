@@ -35,7 +35,7 @@ export class World extends THREE.Group {
 
     async generate() {
         const layout = [
-            ["empty", "road", "road", "road", "empty"],
+            ["empty", "empty", "empty", "empty", "empty"], //road pour route
             ["empty", "customBuilding", "skyscraper", "customBuilding", "empty"],
             ["empty", "building", "building", "skyscraper", "empty"],
             ["empty", "customBuilding", "scifiEntrance", "customBuilding", "empty"],

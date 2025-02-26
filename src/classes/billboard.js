@@ -2,8 +2,6 @@ import * as THREE from "three";
 
 export class Billboard {
     constructor(width, height, depth = 0.2) {
-        this.width = width;
-        this.height = height;
         this.depth = depth;
 
         const structureMaterial = new THREE.MeshStandardMaterial({
@@ -13,15 +11,14 @@ export class Billboard {
         });
 
         const screenMaterial = new THREE.MeshStandardMaterial({
-            emissive: "#00ccff",
             emissiveIntensity: 2.5,
-            color: "#000000",
+            color: "#292929",
             roughness: 0.2,
             metalness: 0.1
         });
 
         const frameMaterial = new THREE.MeshStandardMaterial({
-            color: "#ff8000",
+            color: "#00ccff" ,
             metalness: 0.8,
             roughness: 0.3
         });
@@ -75,7 +72,6 @@ export class Billboard {
         this.mesh.add(this.arm2);
         this.mesh.add(this.verticalArm);
 
-        // texte pixelisé en japonais
         this.addJapaneseText("居酒屋", width - 0.2, height - 0.2);
     }
 
@@ -89,15 +85,16 @@ export class Billboard {
         ctx.fillStyle = "#000000";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        ctx.fillStyle = "#00ccff";
-        ctx.font = "200px Arial bold";
+        ctx.fillStyle = "#c71585";
+        ctx.font = "bold 500px Arial, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
 
         //texte en vertical
         const chars = text.split("");
-        let y = canvas/height/ 4;
-        const spacing = 250;
+        let spacing = canvas.height / (chars.length);
+        let y = canvas.height / 2 - ((chars.length - 1) * spacing) / 2;
+
         for (let char of chars) {
             ctx.fillText(char, canvas.width / 2, y);
             y += spacing;
