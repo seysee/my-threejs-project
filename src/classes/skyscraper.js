@@ -2,11 +2,12 @@ import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { GiantScreen } from "./giantscreen.js";
 
 export class Skyscraper {
     constructor(width, height, depth, position, scene, camera, renderer) {
         if (!renderer) {
-            throw new Error("Renderer is required for bloom effect");
+            throw new Error("renderer obligatoire pour bloom effect");
         }
 
         this.renderer = renderer;
@@ -18,8 +19,8 @@ export class Skyscraper {
         this.addSection(width, this.height * 0.6, depth, 0, "#1e1e1e", "patterned");
         this.addSection(width * 0.6, this.height * 0.4, depth * 0.6, this.height * 0.6, "#1a1a1a", true);
         this.addRoof(width, depth);
-
         this.initBloom(scene, camera);
+        this.addGiantScreen(width * 0.8, this.height * 0.4, depth * 0.8, this.height * 0.6);
     }
 
     addSection(width, height, depth, yOffset, color, windowMode) {
@@ -147,5 +148,14 @@ export class Skyscraper {
         if (this.composer) {
             this.composer.render();
         }
+    }
+
+    addGiantScreen(width, height, depth, yOffset) {
+        const screenWidth = width * 0.9;
+        const screenHeight = height * 0.5;
+        const screenPosition = new THREE.Vector3(0, yOffset + height / 2, depth / 2 + 0.1);
+        const screen = new GiantScreen(screenWidth, screenHeight, screenPosition, "./assets/textures/ads_04.jpg");
+        screen.mesh.position.z += screenWidth / 2 - 0.6;
+        this.mesh.add(screen.mesh);
     }
 }
