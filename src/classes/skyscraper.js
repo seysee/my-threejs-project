@@ -153,9 +153,8 @@ export class Skyscraper {
     addGiantScreen(width, height, depth, yOffset) {
         const screenWidth = width * 0.9;
         const screenHeight = height * 0.5;
-        const screenPosition = new THREE.Vector3(0, yOffset + height / 2, depth / 2 + 0.1);
-        const screen = new GiantScreen(screenWidth, screenHeight, screenPosition, "./assets/textures/ads_04.jpg");
-        screen.mesh.position.z += screenWidth / 2 - 0.6;
+        const screenPosition = new THREE.Vector3(0, yOffset + height / 2, depth / 2 - 0.3);
+        const screen = new GiantScreen(screenWidth, screenHeight, screenPosition, "./assets/textures/ads_large_04.jpg");
         this.mesh.add(screen.mesh);
     }
 }
