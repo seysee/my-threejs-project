@@ -9,6 +9,8 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x333333);
+renderer.shadowMap.enabled = true; //ombres
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
 
@@ -31,12 +33,12 @@ world.generate(camera);
 scene.add(world);
 
 function setUpLights(){
-    const light1 = new THREE.DirectionalLight();
-    light1.position.set(1,1,1);
+    const light1 = new THREE.DirectionalLight(0xffffff, 1.2);
+    light1.position.set(5,10,5);
     scene.add(light1);
 
-    const light2 = new THREE.DirectionalLight();
-    light2.position.set(-1, 1, -0,5);
+    const light2 = new THREE.DirectionalLight(0xffffff, 1.0);
+    light2.position.set(-5, 10, -5);
     scene.add(light2);
 
     const ambient = new THREE.AmbientLight();

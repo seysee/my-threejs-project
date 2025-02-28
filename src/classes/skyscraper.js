@@ -1,7 +1,16 @@
 import * as THREE from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { GiantScreen } from "./giantscreen.js";
 
 export class Skyscraper {
-    constructor(width, height, depth, position) {
+    constructor(width, height, depth, position, scene, camera, renderer) {
+        if (!renderer) {
+            throw new Error("renderer obligatoire pour bloom effect");
+        }
+
+        this.renderer = renderer;
         const heightReductionFactor = 0.7;
         this.height = height * heightReductionFactor;
         this.mesh = new THREE.Group();
@@ -10,6 +19,8 @@ export class Skyscraper {
         this.addSection(width, this.height * 0.6, depth, 0, "#1e1e1e", "patterned");
         this.addSection(width * 0.6, this.height * 0.4, depth * 0.6, this.height * 0.6, "#1a1a1a", true);
         this.addRoof(width, depth);
+        this.initBloom(scene, camera);
+        this.addGiantScreen(width * 0.8, this.height * 0.4, depth * 0.8, this.height * 0.6);
     }
 
     addSection(width, height, depth, yOffset, color, windowMode) {
@@ -30,7 +41,7 @@ export class Skyscraper {
     }
 
     addWindows(section, width, height, depth, mode) {
-        const windowWidth = 0.3;
+        const windowWidth = 0.1; //épaisseur des lignes
         const windowHeight = height * 0.9;
         const spacing = 0.3;
         const positions = [
@@ -96,8 +107,8 @@ export class Skyscraper {
 
     getVerticalGradientColor(index, total, maxHeight) {
         const ratio = index / total;
-        const startColor = new THREE.Color("#2a7fff");
-        const endColor = new THREE.Color("#c71585");
+        const startColor = new THREE.Color("#25FDE9");
+        const endColor = new THREE.Color("#25FDE9");
         const lerpHeight = ratio * maxHeight;
 
         return startColor.lerp(endColor, lerpHeight / maxHeight);
@@ -108,12 +119,42 @@ export class Skyscraper {
         const roofDepth = depth * 0.4;
         const geometry = new THREE.BoxGeometry(roofWidth, 1.5, roofDepth);
         const material = new THREE.MeshStandardMaterial({
-            color: "rgba(67,66,66,0.5)",
+            color: new THREE.Color(0x434242),
+            transparent: true,
+            opacity: 0.5,
             roughness: 0.5,
             metalness: 0.9,
         });
         const roof = new THREE.Mesh(geometry, material);
         roof.position.y = this.height + 0.1;
         this.mesh.add(roof);
+    }
+
+    initBloom(scene, camera) {
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0;
+        bloomPass.strength = 1.5;
+        bloomPass.radius = 0.5;
+
+        this.composer = new EffectComposer(this.renderer);
+        this.composer.setPixelRatio(this.renderer.getPixelRatio());
+        this.composer.setSize(window.innerWidth, window.innerHeight);
+        this.composer.addPass(renderScene);
+        this.composer.addPass(bloomPass);
+    }
+
+    render() {
+        if (this.composer) {
+            this.composer.render();
+        }
+    }
+
+    addGiantScreen(width, height, depth, yOffset) {
+        const screenWidth = width * 0.9;
+        const screenHeight = height * 0.5;
+        const screenPosition = new THREE.Vector3(0, yOffset + height / 2, depth / 2 - 0.3);
+        const screen = new GiantScreen(screenWidth, screenHeight, screenPosition, "./assets/textures/ads_large_04.jpg");
+        this.mesh.add(screen.mesh);
     }
 }
