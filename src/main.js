@@ -8,7 +8,6 @@ import { World } from "./classes/world.js";
 const renderer = new THREE.WebGLRenderer();
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x333333);
 renderer.shadowMap.enabled = true; //ombres
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
@@ -17,7 +16,7 @@ document.body.appendChild(renderer.domElement);
 
 //camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight);
-camera.position.set(-50, 50, 70);
+camera.position.set(20, 35, 55);
 camera.lookAt(0, 0, 0);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -28,6 +27,16 @@ controls.update();
 
 //scene
 const scene = new THREE.Scene();
+const textureLoader = new THREE.TextureLoader();
+const nightSkyTexture = textureLoader.load("./assets/textures/sky_night.jpg");
+const skyGeo = new THREE.SphereGeometry(500, 32, 32);
+const skyMat = new THREE.MeshBasicMaterial({
+    map: nightSkyTexture,
+    side: THREE.BackSide
+});
+const sky = new THREE.Mesh(skyGeo, skyMat);
+scene.add(sky);
+
 const world = new World(12345);
 world.generate(camera);
 scene.add(world);

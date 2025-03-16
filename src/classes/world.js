@@ -12,7 +12,7 @@ export class World extends THREE.Group {
         super();
         this.seed = seed;
         this.camera = camera;
-        this.grid = new Grid(5, 5, 20);
+        this.grid = new Grid(3, 3, 20);
         const ground = new Ground(this.grid.rows * this.grid.cellSize);
         this.add(ground.mesh);
         this.renderer = new THREE.WebGLRenderer();
@@ -35,11 +35,9 @@ export class World extends THREE.Group {
 
     async generate() {
         const layout = [
-            ["empty", "empty", "empty", "empty", "empty"], //road pour route
-            ["empty", "customBuilding", "skyscraper", "customBuilding", "empty"],
-            ["empty", "building", "building", "skyscraper", "empty"],
-            ["empty", "customBuilding", "scifiEntrance", "customBuilding", "empty"],
-            ["empty", "empty", "empty", "empty", "empty"]
+            ["customBuilding", "skyscraper", "customBuilding"],
+            ["building", "building", "skyscraper"],
+            ["customBuilding", "scifiEntrance", "customBuilding"],
         ];
 
         for (let row = 0; row < this.grid.rows; row++) {
@@ -92,8 +90,8 @@ export class World extends THREE.Group {
     createClouds() {
         const cloudGroup = new THREE.Group();
         const numClouds = 20;
-        const radius1 = this.grid.rows * this.grid.cellSize * 0.7;
-        const radius2 = this.grid.rows * this.grid.cellSize * 0.65; /* rayon */
+        const radius1 = this.grid.rows * this.grid.cellSize * 0.95;
+        const radius2 = this.grid.rows * this.grid.cellSize * 0.8; // rayon
 
         const spriteMaterial = new THREE.SpriteMaterial({
             map: this.cloudTexture,
@@ -104,7 +102,7 @@ export class World extends THREE.Group {
 
         for (let j = 0; j < 2; j++) {
             const radius = j === 0 ? radius1 : radius2;
-            const heightOffset = j === 0 ? 15 : 2; // hauteur de chaque rangée
+            const heightOffset = j === 0 ? 15 : 2; // hauteur de chaque rangée de nuages
 
             for (let i = 0; i < numClouds; i++) {
                 const cloud = new THREE.Sprite(spriteMaterial);
