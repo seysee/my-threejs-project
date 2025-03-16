@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { Grid } from "./grid.js";
-import { Road } from "./road.js";
 import { Ground } from "./ground.js";
 import { Building } from "./building.js";
 import { Skyscraper } from "./skyscraper.js";
@@ -85,11 +84,6 @@ export class World extends THREE.Group {
                     await this.loadCachedModel(BuildingModel, './assets/models/sky_t_021_gltf/scene.gltf', position);
                 } else if (type === "scifiEntrance") {
                     await this.loadCachedModel(BuildingEntrance, './assets/models/scifi_building_entrance_gltf/scene.gltf', position);
-                }
-                else if (type === "road") {
-                    const road = new Road(this.grid.cellSize, position);
-                    this.grid.placeInCell(row, col, road);
-                    this.add(road.mesh);
                 }
             }
         }
@@ -178,7 +172,7 @@ export class World extends THREE.Group {
             this.updateTimerUI();
             if (this.timeLeft <= 0) {
                 clearInterval(this.timerInterval);
-                this.showMessage("Temps écoulé ! Mission échouée.");
+                this.showMessage("TEMPS ÉCOULÉ ! MISSION ÉCHOUÉE.");
             }
         }, 1000);
     }
@@ -190,11 +184,11 @@ export class World extends THREE.Group {
     }
 
     updateUI() {
-        document.getElementById("counter").innerText = `Objets collectés : ${this.objectsCollected} / 10`;
+        document.getElementById("counter").innerText = `OBJETS COLLECTÉS : ${this.objectsCollected} / 10`;
     }
 
     updateTimerUI() {
-        document.getElementById("timer").innerText = `Temps restant : ${this.timeLeft}s`;
+        document.getElementById("timer").innerText = `TEMPS RESTANT : ${this.timeLeft}s`;
     }
 
     showMessage(message) {
@@ -295,6 +289,7 @@ export class World extends THREE.Group {
     }
 
     shootWeapon() {
+        if (this.isMissionOver) return;
         const raycaster = new THREE.Raycaster();
         const direction = new THREE.Vector3();
         this.camera.getWorldDirection(direction);
@@ -316,6 +311,10 @@ export class World extends THREE.Group {
                 this.objectsCollected++;
                 console.log(`Objets collectés : ${this.objectsCollected}/10`);
                 this.updateUI();
+                if (this.objectsCollected === 10) {
+                    clearInterval(this.timerInterval);
+                    this.showMessage("FÉLICITATIONS ! MISSION RÉUSSIE !");
+                }
             }
         }
     }
@@ -346,7 +345,7 @@ export class World extends THREE.Group {
         crosshair.style.left = "50%";
         crosshair.style.width = "10px";
         crosshair.style.height = "10px";
-        crosshair.style.backgroundColor = "red";
+        crosshair.style.backgroundColor = "#ff66cc";
         crosshair.style.borderRadius = "50%";
         crosshair.style.transform = "translate(-50%, -50%)";
         crosshair.style.zIndex = "1000";
