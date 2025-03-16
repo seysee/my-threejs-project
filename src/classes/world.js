@@ -6,7 +6,8 @@ import { Building } from "./building.js";
 import { Skyscraper } from "./skyscraper.js";
 import { BuildingModel } from "./BuildingModel.js";
 import { BuildingEntrance } from "./BuildingEntrance.js";
-import { Collectible } from "./object.js";
+import { Collectible } from "./hiddenobject.js";
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export class World extends THREE.Group {
     constructor(seed, camera, scene) {
@@ -18,6 +19,7 @@ export class World extends THREE.Group {
         this.objectsCollected = 0;
         this.timeLeft = 60;
         this.timerInterval = null;
+        this.isMissionOver = false;
 
         this.grid = new Grid(3, 3, 20);
         const ground = new Ground(this.grid.rows * this.grid.cellSize);
@@ -33,16 +35,25 @@ export class World extends THREE.Group {
         this.generate().then(() => {
             console.log("La génération du monde est terminée.");
             this.spawnCollectibles();
+            this.startTimer();
+            this.bindRestartButton();
         }).catch((error) => {
             console.error("Erreur lors de la génération du monde :", error);
         });
 
         this.createClouds();
+        this.loadWeapon();
         this.add(this.grid.group);
 
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
-        window.addEventListener("click", (event) => this.onMouseClick(event));
+
+        window.addEventListener("keydown", (event) => {
+            if (event.key === "a") this.shootWeapon();
+        });
+
+        this.checkTargetLoop();
+        this.createCrosshair();
     }
 
     async generate() {
@@ -115,21 +126,17 @@ export class World extends THREE.Group {
         for (let j = 0; j < 2; j++) {
             const radius = j === 0 ? radius1 : radius2;
             const heightOffset = j === 0 ? 15 : 2; // hauteur de chaque rangée de nuages
-
             for (let i = 0; i < numClouds; i++) {
                 const cloud = new THREE.Sprite(spriteMaterial);
                 const angle = (i / numClouds) * Math.PI * 2;
                 const x = Math.cos(angle) * radius;
                 const z = Math.sin(angle) * radius;
                 const y = Math.random() * 3 + heightOffset;
-
                 cloud.position.set(x, y, z);
                 cloud.scale.set(50, 35, 1);
-
                 cloudGroup.add(cloud);
             }
         }
-
         this.add(cloudGroup);
     }
 
@@ -138,50 +145,211 @@ export class World extends THREE.Group {
             const x = (Math.random() - 0.5) * this.grid.columns * this.grid.cellSize;
             const y = Math.random() * 50;
             const z = (Math.random() - 0.5) * this.grid.rows * this.grid.cellSize;
-
             const collectible = new Collectible(new THREE.Vector3(x, y, z));
             this.collectibles.push(collectible);
             this.add(collectible.mesh);
-
-            console.log(`Objet placé à : x=${x}, y=${y}, z=${z}`);
+            //console.log(`Objet placé à : x=${x}, y=${y}, z=${z}`);
         }
     }
 
-    onMouseClick(event) {
-        event.preventDefault();
-        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-        this.raycaster.setFromCamera(this.mouse, this.camera);
-        const intersects = this.raycaster.intersectObjects(this.collectibles.map(obj => obj.mesh));
-        if (intersects.length > 0) {
-            const clickedObject = intersects[0].object;
-            const index = this.collectibles.findIndex(obj => obj.mesh === clickedObject);
-            if (index !== -1) {
-                const collectible = this.collectibles[index];
-                this.remove(collectible.mesh);
-                collectible.mesh.geometry.dispose();
-                collectible.mesh.material.dispose();
-                this.collectibles.splice(index, 1);
-            }
-            this.objectsCollected++;
-            console.log(`Objets collectés : ${this.objectsCollected}/10`);
-            if (this.objectsCollected === 10) {
-                clearInterval(this.timerInterval);
-                alert("Félicitations ! Vous avez collecté tous les objets !");
-            }
-        }
+    restartMission() {
+        const messageElement = document.getElementById("message");
+        messageElement.classList.add('hidden');
+        this.isMissionOver = false;
+        this.objectsCollected = 0;
+        this.timeLeft = 60;
+        this.clearCollectibles();
+        this.spawnCollectibles();
+        this.updateUI();
+        this.startTimer();
+        this.hideMessage();
+    }
+
+    bindRestartButton() {
+        const restartButton = document.getElementById("restart-btn");
+        restartButton.addEventListener("click", () => {
+            this.restartMission();
+        });
     }
 
     startTimer() {
         this.timerInterval = setInterval(() => {
             this.timeLeft--;
-            console.log(`Temps restant : ${this.timeLeft}s`);
-
+            this.updateTimerUI();
             if (this.timeLeft <= 0) {
                 clearInterval(this.timerInterval);
-                alert("Temps écoulé ! Mission échouée.");
+                this.showMessage("Temps écoulé ! Mission échouée.");
             }
         }, 1000);
     }
 
+    onKeyPress(event) {
+        if (event.key.toLowerCase() === "a") {
+            this.shootWeapon();
+        }
+    }
+
+    updateUI() {
+        document.getElementById("counter").innerText = `Objets collectés : ${this.objectsCollected} / 10`;
+    }
+
+    updateTimerUI() {
+        document.getElementById("timer").innerText = `Temps restant : ${this.timeLeft}s`;
+    }
+
+    showMessage(message) {
+        const messageElement = document.getElementById("message");
+        const messageText = document.getElementById("message-text");
+        messageText.innerText = message;
+        messageElement.classList.remove("hidden");
+        messageElement.style.display = "block";
+        this.isMissionOver = true;
+    }
+
+    hideMessage() {
+        const messageElement = document.getElementById("message");
+        messageElement.classList.add("hidden");
+        messageElement.style.display = "none";
+    }
+
+    clearCollectibles() {
+        for (let i = 0; i < this.collectibles.length; i++) {
+            const collectible = this.collectibles[i];
+            this.remove(collectible.mesh);
+            collectible.mesh.geometry.dispose();
+            collectible.mesh.material.dispose();
+        }
+        this.collectibles = [];
+    }
+
+    createExplosion(position) {
+        const particleCount = 20;
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const velocities = [];
+
+        for (let i = 0; i < particleCount; i++) {
+            positions[i * 3] = position.x;
+            positions[i * 3 + 1] = position.y;
+            positions[i * 3 + 2] = position.z;
+
+            velocities.push(
+                new THREE.Vector3(
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2
+                )
+            );
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const material = new THREE.PointsMaterial({
+            color: 0xff66cc,
+            size: 0.5,
+            transparent: true,
+            opacity: 1
+        });
+
+        const particles = new THREE.Points(geometry, material);
+        this.add(particles);
+
+        let frame = 0;
+        const maxFrames = 30;
+
+        const animateExplosion = () => {
+            if (frame > maxFrames) {
+                this.remove(particles);
+                geometry.dispose();
+                material.dispose();
+                return;
+            }
+
+            const positionsArray = geometry.attributes.position.array;
+            for (let i = 0; i < particleCount; i++) {
+                positionsArray[i * 3] += velocities[i].x * 0.2;
+                positionsArray[i * 3 + 1] += velocities[i].y * 0.2;
+                positionsArray[i * 3 + 2] += velocities[i].z * 0.2;
+            }
+
+            geometry.attributes.position.needsUpdate = true;
+            frame++;
+            requestAnimationFrame(animateExplosion);
+        };
+
+        animateExplosion();
+    }
+
+    loadWeapon() {
+        const loader = new GLTFLoader();
+        loader.load('./assets/models/shockwave_gun/scene.gltf', (gltf) => {
+            this.weapon = gltf.scene;
+            this.weapon.scale.set(2, 2, 2);
+            this.weapon.position.set(2, -1.5, -2);
+            this.weapon.rotation.y = Math.PI;
+            this.camera.add(this.weapon);
+            this.scene.add(this.camera);
+        }, undefined, (error) => {
+            console.error("Erreur lors du chargement de l'arme :", error);
+        });
+    }
+
+    shootWeapon() {
+        const raycaster = new THREE.Raycaster();
+        const direction = new THREE.Vector3();
+        this.camera.getWorldDirection(direction);
+        raycaster.set(this.camera.position, direction);
+        const intersects = raycaster.intersectObjects(this.collectibles.map(obj => obj.mesh));
+        if (intersects.length > 0) {
+            const hitObject = intersects[0].object;
+            const index = this.collectibles.findIndex(obj => obj.mesh === hitObject);
+
+            if (index !== -1) {
+                const collectible = this.collectibles[index];
+                this.createExplosion(collectible.mesh.position);
+                setTimeout(() => {
+                    this.remove(collectible.mesh);
+                    collectible.mesh.geometry.dispose();
+                    collectible.mesh.material.dispose();
+                    this.collectibles.splice(index, 1);
+                }, 100);
+                this.objectsCollected++;
+                console.log(`Objets collectés : ${this.objectsCollected}/10`);
+                this.updateUI();
+            }
+        }
+    }
+
+    checkTarget() {
+        const raycaster = new THREE.Raycaster();
+        const direction = new THREE.Vector3();
+        this.camera.getWorldDirection(direction);
+        raycaster.set(this.camera.position, direction);
+
+        this.collectibles.forEach(obj => obj.mesh.material.color.set(0xffffff));
+
+        const intersects = raycaster.intersectObjects(this.collectibles.map(obj => obj.mesh));
+        if (intersects.length > 0) {
+            const target = intersects[0].object;
+            target.material.color.set(0xff0000);
+        }
+    }
+
+    checkTargetLoop() {
+        setInterval(() => this.checkTarget(), 100);
+    }
+
+    createCrosshair() {
+        const crosshair = document.createElement("div");
+        crosshair.style.position = "absolute";
+        crosshair.style.top = "50%";
+        crosshair.style.left = "50%";
+        crosshair.style.width = "10px";
+        crosshair.style.height = "10px";
+        crosshair.style.backgroundColor = "red";
+        crosshair.style.borderRadius = "50%";
+        crosshair.style.transform = "translate(-50%, -50%)";
+        crosshair.style.zIndex = "1000";
+        document.body.appendChild(crosshair);
+    }
 }
