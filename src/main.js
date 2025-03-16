@@ -22,7 +22,7 @@ camera.lookAt(0, 0, 0);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 0, 0);
 controls.update();
-
+controls.maxDistance = 70;
 
 
 //scene
@@ -37,7 +37,7 @@ const skyMat = new THREE.MeshBasicMaterial({
 const sky = new THREE.Mesh(skyGeo, skyMat);
 scene.add(sky);
 
-const world = new World(12345);
+const world = new World(12345, camera, scene);
 world.generate(camera);
 scene.add(world);
 
