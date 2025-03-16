@@ -33,6 +33,8 @@ export class World extends THREE.Group {
         this.generate().then(() => {
             console.log("La génération du monde est terminée.");
             this.spawnCollectibles();
+            this.startTimer();
+            this.bindRestartButton();
         }).catch((error) => {
             console.error("Erreur lors de la génération du monde :", error);
         });
@@ -138,12 +140,10 @@ export class World extends THREE.Group {
             const x = (Math.random() - 0.5) * this.grid.columns * this.grid.cellSize;
             const y = Math.random() * 50;
             const z = (Math.random() - 0.5) * this.grid.rows * this.grid.cellSize;
-
             const collectible = new Collectible(new THREE.Vector3(x, y, z));
             this.collectibles.push(collectible);
             this.add(collectible.mesh);
-
-            console.log(`Objet placé à : x=${x}, y=${y}, z=${z}`);
+            //console.log(`Objet placé à : x=${x}, y=${y}, z=${z}`);
         }
     }
 
@@ -165,9 +165,11 @@ export class World extends THREE.Group {
             }
             this.objectsCollected++;
             console.log(`Objets collectés : ${this.objectsCollected}/10`);
+            this.updateUI();
+
             if (this.objectsCollected === 10) {
                 clearInterval(this.timerInterval);
-                alert("Félicitations ! Vous avez collecté tous les objets !");
+                this.showMessage("Félicitations ! Vous avez collecté tous les objets !");
             }
         }
     }
@@ -175,13 +177,47 @@ export class World extends THREE.Group {
     startTimer() {
         this.timerInterval = setInterval(() => {
             this.timeLeft--;
-            console.log(`Temps restant : ${this.timeLeft}s`);
-
+            this.updateTimerUI();
             if (this.timeLeft <= 0) {
                 clearInterval(this.timerInterval);
-                alert("Temps écoulé ! Mission échouée.");
+                this.showMessage("Temps écoulé ! Mission échouée.");
             }
         }, 1000);
+    }
+
+    updateUI() {
+        document.getElementById("counter").innerText = `Objets collectés : ${this.objectsCollected} / 10`;
+    }
+
+    updateTimerUI() {
+        document.getElementById("timer").innerText = `Temps restant : ${this.timeLeft}s`;
+    }
+
+    showMessage(message) {
+        const messageElement = document.getElementById("message");
+        const messageText = document.getElementById("message-text");
+        messageText.innerText = message;
+        messageElement.classList.remove("hidden");
+        messageElement.style.display = "block";
+    }
+
+    hideMessage() {
+        const messageElement = document.getElementById("message");
+        messageElement.classList.add("hidden");
+        messageElement.style.display = "none";
+    }
+
+    bindRestartButton() {
+        const restartButton = document.getElementById("restart-btn");
+        restartButton.addEventListener("click", () => {
+            this.objectsCollected = 0;
+            this.timeLeft = 60;
+            this.updateUI();
+            this.updateTimerUI();
+            this.spawnCollectibles();
+            this.startTimer();
+            this.hideMessage();
+        });
     }
 
 }
