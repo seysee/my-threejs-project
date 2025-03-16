@@ -43,13 +43,17 @@ export class World extends THREE.Group {
 
         this.createClouds();
         this.loadWeapon();
-
         this.add(this.grid.group);
 
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
-        window.addEventListener("click", (event) => this.onMouseClick(event));
-        window.addEventListener("mousedown", () => this.shootWeapon());
+
+        window.addEventListener("keydown", (event) => {
+            if (event.key === "a") this.shootWeapon();
+        });
+
+        this.checkTargetLoop();
+        this.createCrosshair();
     }
 
     async generate() {
@@ -168,40 +172,6 @@ export class World extends THREE.Group {
         });
     }
 
-    onMouseClick(event) {
-        event.preventDefault();
-        if (this.isMissionOver) return;
-        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-        this.raycaster.setFromCamera(this.mouse, this.camera);
-
-        const intersects = this.raycaster.intersectObjects(this.collectibles.map(obj => obj.mesh));
-        if (intersects.length > 0) {
-            const clickedObject = intersects[0].object;
-            const index = this.collectibles.findIndex(obj => obj.mesh === clickedObject);
-
-            if (index !== -1) {
-                const collectible = this.collectibles[index];
-                this.createExplosion(collectible.mesh.position);
-                setTimeout(() => {
-                    this.remove(collectible.mesh);
-                    collectible.mesh.geometry.dispose();
-                    collectible.mesh.material.dispose();
-                    this.collectibles.splice(index, 1);
-                }, 100);
-
-                this.objectsCollected++;
-                console.log(`Objets collectés : ${this.objectsCollected}/10`);
-                this.updateUI();
-
-                if (this.objectsCollected === 10) {
-                    clearInterval(this.timerInterval);
-                    this.showMessage("Félicitations ! Vous avez collecté tous les objets !");
-                }
-            }
-        }
-    }
-
     startTimer() {
         this.timerInterval = setInterval(() => {
             this.timeLeft--;
@@ -211,6 +181,12 @@ export class World extends THREE.Group {
                 this.showMessage("Temps écoulé ! Mission échouée.");
             }
         }, 1000);
+    }
+
+    onKeyPress(event) {
+        if (event.key.toLowerCase() === "a") {
+            this.shootWeapon();
+        }
     }
 
     updateUI() {
@@ -309,7 +285,7 @@ export class World extends THREE.Group {
         loader.load('./assets/models/shockwave_gun/scene.gltf', (gltf) => {
             this.weapon = gltf.scene;
             this.weapon.scale.set(2, 2, 2);
-            this.weapon.position.set(2, -1, -2);
+            this.weapon.position.set(2, -1.5, -2);
             this.weapon.rotation.y = Math.PI;
             this.camera.add(this.weapon);
             this.scene.add(this.camera);
@@ -327,6 +303,7 @@ export class World extends THREE.Group {
         if (intersects.length > 0) {
             const hitObject = intersects[0].object;
             const index = this.collectibles.findIndex(obj => obj.mesh === hitObject);
+
             if (index !== -1) {
                 const collectible = this.collectibles[index];
                 this.createExplosion(collectible.mesh.position);
@@ -343,5 +320,36 @@ export class World extends THREE.Group {
         }
     }
 
+    checkTarget() {
+        const raycaster = new THREE.Raycaster();
+        const direction = new THREE.Vector3();
+        this.camera.getWorldDirection(direction);
+        raycaster.set(this.camera.position, direction);
 
+        this.collectibles.forEach(obj => obj.mesh.material.color.set(0xffffff));
+
+        const intersects = raycaster.intersectObjects(this.collectibles.map(obj => obj.mesh));
+        if (intersects.length > 0) {
+            const target = intersects[0].object;
+            target.material.color.set(0xff0000);
+        }
+    }
+
+    checkTargetLoop() {
+        setInterval(() => this.checkTarget(), 100);
+    }
+
+    createCrosshair() {
+        const crosshair = document.createElement("div");
+        crosshair.style.position = "absolute";
+        crosshair.style.top = "50%";
+        crosshair.style.left = "50%";
+        crosshair.style.width = "10px";
+        crosshair.style.height = "10px";
+        crosshair.style.backgroundColor = "red";
+        crosshair.style.borderRadius = "50%";
+        crosshair.style.transform = "translate(-50%, -50%)";
+        crosshair.style.zIndex = "1000";
+        document.body.appendChild(crosshair);
+    }
 }
