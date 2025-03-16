@@ -6,7 +6,8 @@ import { Building } from "./building.js";
 import { Skyscraper } from "./skyscraper.js";
 import { BuildingModel } from "./BuildingModel.js";
 import { BuildingEntrance } from "./BuildingEntrance.js";
-import { Collectible } from "./object.js";
+import { Collectible } from "./hiddenobject.js";
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export class World extends THREE.Group {
     constructor(seed, camera, scene) {
@@ -18,6 +19,7 @@ export class World extends THREE.Group {
         this.objectsCollected = 0;
         this.timeLeft = 60;
         this.timerInterval = null;
+        this.isMissionOver = false;
 
         this.grid = new Grid(3, 3, 20);
         const ground = new Ground(this.grid.rows * this.grid.cellSize);
@@ -40,11 +42,14 @@ export class World extends THREE.Group {
         });
 
         this.createClouds();
+        this.loadWeapon();
+
         this.add(this.grid.group);
 
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
         window.addEventListener("click", (event) => this.onMouseClick(event));
+        window.addEventListener("mousedown", () => this.shootWeapon());
     }
 
     async generate() {
@@ -117,21 +122,17 @@ export class World extends THREE.Group {
         for (let j = 0; j < 2; j++) {
             const radius = j === 0 ? radius1 : radius2;
             const heightOffset = j === 0 ? 15 : 2; // hauteur de chaque rangée de nuages
-
             for (let i = 0; i < numClouds; i++) {
                 const cloud = new THREE.Sprite(spriteMaterial);
                 const angle = (i / numClouds) * Math.PI * 2;
                 const x = Math.cos(angle) * radius;
                 const z = Math.sin(angle) * radius;
                 const y = Math.random() * 3 + heightOffset;
-
                 cloud.position.set(x, y, z);
                 cloud.scale.set(50, 35, 1);
-
                 cloudGroup.add(cloud);
             }
         }
-
         this.add(cloudGroup);
     }
 
@@ -147,29 +148,56 @@ export class World extends THREE.Group {
         }
     }
 
+    restartMission() {
+        const messageElement = document.getElementById("message");
+        messageElement.classList.add('hidden');
+        this.isMissionOver = false;
+        this.objectsCollected = 0;
+        this.timeLeft = 60;
+        this.clearCollectibles();
+        this.spawnCollectibles();
+        this.updateUI();
+        this.startTimer();
+        this.hideMessage();
+    }
+
+    bindRestartButton() {
+        const restartButton = document.getElementById("restart-btn");
+        restartButton.addEventListener("click", () => {
+            this.restartMission();
+        });
+    }
+
     onMouseClick(event) {
         event.preventDefault();
+        if (this.isMissionOver) return;
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         this.raycaster.setFromCamera(this.mouse, this.camera);
+
         const intersects = this.raycaster.intersectObjects(this.collectibles.map(obj => obj.mesh));
         if (intersects.length > 0) {
             const clickedObject = intersects[0].object;
             const index = this.collectibles.findIndex(obj => obj.mesh === clickedObject);
+
             if (index !== -1) {
                 const collectible = this.collectibles[index];
-                this.remove(collectible.mesh);
-                collectible.mesh.geometry.dispose();
-                collectible.mesh.material.dispose();
-                this.collectibles.splice(index, 1);
-            }
-            this.objectsCollected++;
-            console.log(`Objets collectés : ${this.objectsCollected}/10`);
-            this.updateUI();
+                this.createExplosion(collectible.mesh.position);
+                setTimeout(() => {
+                    this.remove(collectible.mesh);
+                    collectible.mesh.geometry.dispose();
+                    collectible.mesh.material.dispose();
+                    this.collectibles.splice(index, 1);
+                }, 100);
 
-            if (this.objectsCollected === 10) {
-                clearInterval(this.timerInterval);
-                this.showMessage("Félicitations ! Vous avez collecté tous les objets !");
+                this.objectsCollected++;
+                console.log(`Objets collectés : ${this.objectsCollected}/10`);
+                this.updateUI();
+
+                if (this.objectsCollected === 10) {
+                    clearInterval(this.timerInterval);
+                    this.showMessage("Félicitations ! Vous avez collecté tous les objets !");
+                }
             }
         }
     }
@@ -199,6 +227,7 @@ export class World extends THREE.Group {
         messageText.innerText = message;
         messageElement.classList.remove("hidden");
         messageElement.style.display = "block";
+        this.isMissionOver = true;
     }
 
     hideMessage() {
@@ -207,17 +236,112 @@ export class World extends THREE.Group {
         messageElement.style.display = "none";
     }
 
-    bindRestartButton() {
-        const restartButton = document.getElementById("restart-btn");
-        restartButton.addEventListener("click", () => {
-            this.objectsCollected = 0;
-            this.timeLeft = 60;
-            this.updateUI();
-            this.updateTimerUI();
-            this.spawnCollectibles();
-            this.startTimer();
-            this.hideMessage();
+    clearCollectibles() {
+        for (let i = 0; i < this.collectibles.length; i++) {
+            const collectible = this.collectibles[i];
+            this.remove(collectible.mesh);
+            collectible.mesh.geometry.dispose();
+            collectible.mesh.material.dispose();
+        }
+        this.collectibles = [];
+    }
+
+    createExplosion(position) {
+        const particleCount = 20;
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const velocities = [];
+
+        for (let i = 0; i < particleCount; i++) {
+            positions[i * 3] = position.x;
+            positions[i * 3 + 1] = position.y;
+            positions[i * 3 + 2] = position.z;
+
+            velocities.push(
+                new THREE.Vector3(
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2
+                )
+            );
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const material = new THREE.PointsMaterial({
+            color: 0xff66cc,
+            size: 0.5,
+            transparent: true,
+            opacity: 1
+        });
+
+        const particles = new THREE.Points(geometry, material);
+        this.add(particles);
+
+        let frame = 0;
+        const maxFrames = 30;
+
+        const animateExplosion = () => {
+            if (frame > maxFrames) {
+                this.remove(particles);
+                geometry.dispose();
+                material.dispose();
+                return;
+            }
+
+            const positionsArray = geometry.attributes.position.array;
+            for (let i = 0; i < particleCount; i++) {
+                positionsArray[i * 3] += velocities[i].x * 0.2;
+                positionsArray[i * 3 + 1] += velocities[i].y * 0.2;
+                positionsArray[i * 3 + 2] += velocities[i].z * 0.2;
+            }
+
+            geometry.attributes.position.needsUpdate = true;
+            frame++;
+            requestAnimationFrame(animateExplosion);
+        };
+
+        animateExplosion();
+    }
+
+    loadWeapon() {
+        const loader = new GLTFLoader();
+        loader.load('./assets/models/shockwave_gun/scene.gltf', (gltf) => {
+            this.weapon = gltf.scene;
+            this.weapon.scale.set(2, 2, 2);
+            this.weapon.position.set(2, -1, -2);
+            this.weapon.rotation.y = Math.PI;
+            this.camera.add(this.weapon);
+            this.scene.add(this.camera);
+        }, undefined, (error) => {
+            console.error("Erreur lors du chargement de l'arme :", error);
         });
     }
+
+    shootWeapon() {
+        const raycaster = new THREE.Raycaster();
+        const direction = new THREE.Vector3();
+        this.camera.getWorldDirection(direction);
+        raycaster.set(this.camera.position, direction);
+        const intersects = raycaster.intersectObjects(this.collectibles.map(obj => obj.mesh));
+        if (intersects.length > 0) {
+            const hitObject = intersects[0].object;
+            const index = this.collectibles.findIndex(obj => obj.mesh === hitObject);
+            if (index !== -1) {
+                const collectible = this.collectibles[index];
+                this.createExplosion(collectible.mesh.position);
+                setTimeout(() => {
+                    this.remove(collectible.mesh);
+                    collectible.mesh.geometry.dispose();
+                    collectible.mesh.material.dispose();
+                    this.collectibles.splice(index, 1);
+                }, 100);
+                this.objectsCollected++;
+                console.log(`Objets collectés : ${this.objectsCollected}/10`);
+                this.updateUI();
+            }
+        }
+    }
+
 
 }
