@@ -3,6 +3,38 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { World } from "./classes/world.js";
 
 
+if (window.innerWidth < 1024) {
+    document.getElementById("mobile-warning").style.display = "flex";
+    throw new Error("Accès mobile bloqué");
+} else {
+    document.getElementById("mobile-warning").style.display = "none";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    let progress = 0;
+    const progressBar = document.getElementById("resource-progress");
+    const launchBtn = document.getElementById("launch-btn");
+    const terminal = document.getElementById("terminal");
+    function loadResources() {
+        const interval = setInterval(() => {
+            progress += 10;
+            progressBar.style.width = `${progress}%`;
+            if (progress >= 100) {
+                clearInterval(interval);
+                launchBtn.disabled = false;
+                launchBtn.classList.add("enabled");
+            }
+        }, 500);
+    }
+    launchBtn.addEventListener("click", () => {
+        terminal.style.display = "none";
+        document.getElementById("crosshair").style.display = "block";
+        world.startTimer();
+        document.getElementById("help-icon").classList.remove("hidden");
+    });
+    loadResources();
+});
+
 
 //renderer
 const renderer = new THREE.WebGLRenderer();
@@ -13,7 +45,6 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
 
-
 //camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight);
 camera.position.set(20, 35, 55);
@@ -21,13 +52,12 @@ camera.lookAt(0, 0, 0);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 0, 0);
-controls.enableDamping = true; // Effet d’inertie
+controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.rotateSpeed = 0.6;
-controls.maxDistance = 70;
+controls.maxDistance = 80;
 controls.maxPolarAngle = Math.PI / 2.1;
 controls.update();
-
 
 
 //scene
@@ -67,7 +97,6 @@ function setUpLights(){
 }
 
 
-
 //renderer loop
 const clock = new THREE.Clock();
 
@@ -84,6 +113,13 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+document.getElementById("help-icon").addEventListener("click", () => {
+    document.getElementById("help-popup").style.display = "block";
+});
+
+document.getElementById("close-help").addEventListener("click", () => {
+    document.getElementById("help-popup").style.display = "none";
+});
 
 
 setUpLights();

@@ -1,5 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
+:root {
+    --background-color: #26004b;
+    --border-color: #00fff7;
+    --title-bg: #00fff7;
+    --title-text: #008581;
+    --text-glow: #00fff7;
+    --button-bg: #ff00ff;
+    --button-text: #780a8f;
+    --button-shadow: #ff00ff;
+    --highlight-text: #fe435f;
+    --highlight-glow: #fe435f;
+    --presentation-text: #f3e3ff;
+    --presentation-glow: #f3e3ff;
+}
+
 * {
     font-family: 'Share Tech Mono', monospace;
 }
@@ -24,38 +39,258 @@ html, body {
     margin-bottom: 10px;
 }
 
-#message {
+#help-icon {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    font-size: 2rem;
+    color: white;
+    cursor: pointer;
+    z-index: 1000;
+    transition: transform 0.2s ease-in-out;
+}
+
+#help-icon:hover {
+    transform: scale(1.1);
+}
+
+#help-popup {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: black;
     color: white;
     padding: 20px;
     border-radius: 10px;
     text-align: center;
     display: none;
-    z-index: 1000;
+    z-index: 2000;
+    width: 450px;
+}
+
+#help-content {
+    font-size: 1rem;
+}
+
+#help-popup p {
+    margin: 10px 0;
+}
+
+#close-help {
+    margin-top: 15px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 0 10px var(--button-shadow);
+    font-size: 16px;
+}
+
+#close-help:hover {
+    background-color: #cc4d99;
+}
+
+.hidden {
+    display: none;
+}
+
+#message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: black;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    display: none;
+    z-index: 2000;
 }
 
 #message-content {
     font-size: 18px;
 }
 
-#restart-btn {
-    background-color: #ff66cc;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
+#restart-btn, #launch-btn {
+    margin-top: 1rem;
     cursor: pointer;
-    margin-top: 15px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border: none;
+    background: var(--button-bg);
+    padding: 0.8rem 2rem;
+    color: var(--button-text);
+    box-shadow: 0 0 15px 0 var(--button-shadow);
+    transition: box-shadow 0.2s;
+    opacity: 0.5;
+    transform: skewX(-10deg);
+}
+
+#restart-btn.enabled {
+    opacity: 1;
 }
 
 #restart-btn:hover {
-    background-color: #cc4d99;
+    box-shadow: 0 0 25px 5px var(--button-shadow);
 }
 
 .hidden {
     display: none;
+}
+
+#mobile-warning {
+    display: none !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: black;
+    color: white;
+    font-size: 24px;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+#mobile-warning::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.05) 0px,
+            rgba(255, 255, 255, 0.05) 2px,
+            transparent 2px,
+            transparent 4px
+    );
+    pointer-events: none;
+    z-index: 2;
+}
+
+#terminal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: black;
+    color: var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#terminal::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.05) 0px,
+            rgba(255, 255, 255, 0.05) 2px,
+            transparent 2px,
+            transparent 4px
+    );
+    pointer-events: none;
+    z-index: 2;
+}
+
+@keyframes glitch {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(-0.5px); }
+    40% { transform: translateX(0.5px); }
+    60% { transform: translateX(-0.5px); }
+    80% { transform: translateX(0.5px); }
+    100% { transform: translateX(0); }
+}
+
+#terminal-body {
+    width: 80%;
+    max-width: 600px;
+    padding: 10px;
+    border-radius: 2px;
+    text-align: left;
+    border: 3px solid var(--border-color);
+    animation: glitch 0.8s infinite alternate;
+}
+
+.section {
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 10px;
+}
+
+.section:last-child {
+    border-bottom: none;
+}
+
+.section h2 {
+    background: var(--title-bg);
+    color: var(--title-text);
+    padding: 0.5rem;
+    margin: 0;
+    font-size: 1rem;
+    text-align: center;
+    box-shadow: 0 0 10px var(--border-color);
+}
+
+.section p {
+    font-size: 1rem;
+    text-shadow: 0 0 5px var(--text-glow), 0 0 25px var(--text-glow);
+}
+
+#resource-progress {
+    height: 20px;
+    background: var(--border-color);
+    width: 0;
+    transition: width 0.5s;
+}
+
+#launch-btn.enabled {
+    opacity: 1;
+}
+
+#launch-btn:hover {
+    box-shadow: 0 0 25px 5px var(--button-shadow);
+}
+
+#special {
+    color: var(--highlight-text);
+    text-shadow: 0 0 5px var(--highlight-glow), 0 0 25px var(--highlight-glow);
+}
+
+#presentation {
+    color: var(--presentation-text);
+    text-shadow: 0 0 5px var(--presentation-glow), 0 0 25px var(--presentation-glow);
+}
+
+#crosshair {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    display: none;
+    z-index: 1000;
+}
+
+@media screen and (max-width: 1024px) {
+    #mobile-warning {
+        display: flex !important;
+    }
 }
