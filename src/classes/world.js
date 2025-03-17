@@ -32,9 +32,8 @@ export class World extends THREE.Group {
         this.modelCache = new Map();
 
         this.generate().then(() => {
-            console.log("La génération du monde est terminée.");
+            //console.log("La génération du monde est terminée.");
             this.spawnCollectibles();
-            this.startTimer();
             this.bindRestartButton();
         }).catch((error) => {
             console.error("Erreur lors de la génération du monde :", error);
@@ -309,7 +308,7 @@ export class World extends THREE.Group {
                     this.collectibles.splice(index, 1);
                 }, 100);
                 this.objectsCollected++;
-                console.log(`Objets collectés : ${this.objectsCollected}/10`);
+                //console.log(`Objets collectés : ${this.objectsCollected}/10`);
                 this.updateUI();
                 if (this.objectsCollected === 10) {
                     clearInterval(this.timerInterval);
@@ -340,6 +339,7 @@ export class World extends THREE.Group {
 
     createCrosshair() {
         const crosshair = document.createElement("div");
+        crosshair.id = "crosshair";
         crosshair.style.position = "absolute";
         crosshair.style.top = "50%";
         crosshair.style.left = "50%";
@@ -349,6 +349,7 @@ export class World extends THREE.Group {
         crosshair.style.borderRadius = "50%";
         crosshair.style.transform = "translate(-50%, -50%)";
         crosshair.style.zIndex = "1000";
+        crosshair.style.display = "none";
         document.body.appendChild(crosshair);
     }
 }

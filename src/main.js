@@ -28,6 +28,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     launchBtn.addEventListener("click", () => {
         terminal.style.display = "none";
+        document.getElementById("crosshair").style.display = "block";
+        world.startTimer();
+        document.getElementById("help-icon").classList.remove("hidden");
     });
     loadResources();
 });
@@ -49,10 +52,10 @@ camera.lookAt(0, 0, 0);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 0, 0);
-controls.enableDamping = true; // Effet d’inertie
+controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.rotateSpeed = 0.6;
-controls.maxDistance = 70;
+controls.maxDistance = 80;
 controls.maxPolarAngle = Math.PI / 2.1;
 controls.update();
 
@@ -110,7 +113,14 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+document.getElementById("help-icon").addEventListener("click", () => {
+    document.getElementById("help-popup").style.display = "block";
+});
+
+document.getElementById("close-help").addEventListener("click", () => {
+    document.getElementById("help-popup").style.display = "none";
+});
+
 
 setUpLights();
 animate();
-
