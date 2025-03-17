@@ -3,6 +3,35 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { World } from "./classes/world.js";
 
 
+if (window.innerWidth < 1024) {
+    document.getElementById("mobile-warning").style.display = "flex";
+    throw new Error("Accès mobile bloqué");
+} else {
+    document.getElementById("mobile-warning").style.display = "none";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    let progress = 0;
+    const progressBar = document.getElementById("resource-progress");
+    const launchBtn = document.getElementById("launch-btn");
+    const terminal = document.getElementById("terminal");
+    function loadResources() {
+        const interval = setInterval(() => {
+            progress += 10;
+            progressBar.style.width = `${progress}%`;
+            if (progress >= 100) {
+                clearInterval(interval);
+                launchBtn.disabled = false;
+                launchBtn.classList.add("enabled");
+            }
+        }, 500);
+    }
+    launchBtn.addEventListener("click", () => {
+        terminal.style.display = "none";
+    });
+    loadResources();
+});
+
 
 //renderer
 const renderer = new THREE.WebGLRenderer();
@@ -11,7 +40,6 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true; //ombres
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
-
 
 
 //camera
@@ -27,7 +55,6 @@ controls.rotateSpeed = 0.6;
 controls.maxDistance = 70;
 controls.maxPolarAngle = Math.PI / 2.1;
 controls.update();
-
 
 
 //scene
@@ -67,7 +94,6 @@ function setUpLights(){
 }
 
 
-
 //renderer loop
 const clock = new THREE.Clock();
 
@@ -85,6 +111,6 @@ window.addEventListener('resize', () => {
 });
 
 
-
 setUpLights();
 animate();
+
